@@ -1,8 +1,8 @@
 public class Arc {
-    public Localisation pointOrigine;
-    public Localisation pointArrivee;
-    public double distance;
-    public String rue;
+    private final Localisation pointOrigine;
+    private final Localisation pointArrivee;
+    private final double distance;
+    private final String rue;
 
     public Arc(Localisation pointOrigine, Localisation pointArrivee, String rue, double distance) {
         this.pointOrigine = pointOrigine;
