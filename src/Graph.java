@@ -1,11 +1,16 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 
 public class Graph {
 
@@ -24,24 +29,21 @@ public class Graph {
   }
 
   public Localisation[] determinerZoneInondee(long[] idsOrigin, double epsilon) {
-      Localisation[] loc = new Localisation[idsOrigin.length];
-      int index = 0;
-      for(Long l : idsOrigin) {
-           if (this.localisations.containsKey(l)) {
-               List<Arc> liste = this.listeAdjacence.get(l);
-               for(Arc a : liste) {
-                   if (a.getPointOrigine().getNom().equals(a.getPointArrivee().getNom()) &&
-                           a.getPointArrivee().getAltitude() < (a.getPointOrigine().getAltitude())+epsilon) {
-                       loc[index] = this.localisations.get(l);
-                       index++;
+    // garde l'ordre d'ajout //
+    ArrayList<Localisation> listeLocalisationInondee = new ArrayList<>();
 
-                   }
-               }
+    // points qui sont déjà passé dans l'ago //
+    Set<Long> parcouru = new HashSet<>();
 
-           }
-      }
-    //TODO
-    return loc;
+    Queue<Localisation> queue = new ArrayDeque<>();
+    for (Long id : idsOrigin) {
+      queue.add(localisations.get(id));
+      parcouru.add(id);
+    }
+
+    // TODO
+
+    return listeLocalisationInondee.toArray(new Localisation[0]);
   }
 
   public Deque<Localisation> trouverCheminLePlusCourtPourContournerLaZoneInondee(long idOrigin,
