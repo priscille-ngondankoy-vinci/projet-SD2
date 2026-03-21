@@ -5,13 +5,13 @@ import java.util.Map;
 
 public class Graph {
 
-  private Map<Long, List<Arc>> listeAdgacence;
+  private Map<Long, List<Arc>> listeAdjacence;
   private Map<Long, Localisation> localisations;
   //ATTRIBUT ?
   //TODO
 
   public Graph(String localisations, String roads) {
-    this.listeAdgacence = new HashMap<>();
+    this.listeAdjacence = new HashMap<>();
     this.localisations = new HashMap<>();
   }
 
