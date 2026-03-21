@@ -87,8 +87,24 @@ public class Graph {
   }
 
   public Localisation[] determinerZoneInondee(long[] idsOrigin, double epsilon) {
+      Localisation[] loc = new Localisation[idsOrigin.length];
+      int index = 0;
+      for(Long l : idsOrigin) {
+           if (this.localisations.containsKey(l)) {
+               List<Arc> liste = this.listeAdjacence.get(l);
+               for(Arc a : liste) {
+                   if (a.getPointOrigine().getNom().equals(a.getPointArrivee().getNom()) &&
+                           a.getPointArrivee().getAltitude() < (a.getPointOrigine().getAltitude())+epsilon) {
+                       loc[index] = this.localisations.get(l);
+                       index++;
+
+                   }
+               }
+
+           }
+      }
     //TODO
-    return null;
+    return loc;
   }
 
   public Deque<Localisation> trouverCheminLePlusCourtPourContournerLaZoneInondee(long idOrigin,
