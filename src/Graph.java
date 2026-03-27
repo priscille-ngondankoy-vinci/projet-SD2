@@ -1,11 +1,15 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 
 public class Graph {
 
@@ -24,24 +28,38 @@ public class Graph {
   }
 
   public Localisation[] determinerZoneInondee(long[] idsOrigin, double epsilon) {
-      Localisation[] loc = new Localisation[idsOrigin.length];
-      int index = 0;
-      for(Long l : idsOrigin) {
-           if (this.localisations.containsKey(l)) {
-               List<Arc> liste = this.listeAdjacence.get(l);
-               for(Arc a : liste) {
-                   if (a.getPointOrigine().getNom().equals(a.getPointArrivee().getNom()) &&
-                           a.getPointArrivee().getAltitude() < (a.getPointOrigine().getAltitude())+epsilon) {
-                       loc[index] = this.localisations.get(l);
-                       index++;
+    Queue<Localisation>  aVisiter = new ArrayDeque<>();
+    Set<Long> dejaInondes = new HashSet<>();
+    List<Localisation> ordreInondation = new ArrayList<>();
 
-                   }
-               }
+    // Initialisation avec les points de départs de l'inondation
+    for (long id: idsOrigin){
+      Localisation depart = this.localisations.get(id);
+      aVisiter.add(depart);
+      dejaInondes.add(id);
+      ordreInondation.add(depart);
+    }
 
-           }
+    // Boucle du BFS
+    while (!aVisiter.isEmpty()){
+      Localisation noeudCourant = aVisiter.poll();
+      List<Arc> arcsSortants = this.listeAdjacence.get(noeudCourant.getId());
+
+      if (arcsSortants != null){
+        for (Arc arc: arcsSortants){
+          Localisation voisin = arc.getPointArrivee();
+
+          boolean penteFavorable = voisin.getAltitude() < (noeudCourant.getAltitude() + epsilon);
+
+          if (penteFavorable && !dejaInondes.contains(voisin.getId())){
+            aVisiter.add(voisin);
+            dejaInondes.add(voisin.getId());
+            ordreInondation.add(voisin);
+          }
+        }
       }
-    //TODO
-    return loc;
+    }
+    return ordreInondation.toArray(new Localisation[0]);
   }
 
   public Deque<Localisation> trouverCheminLePlusCourtPourContournerLaZoneInondee(long idOrigin,
