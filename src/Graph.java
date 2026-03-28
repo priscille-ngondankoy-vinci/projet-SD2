@@ -39,6 +39,7 @@ public class Graph {
         adj = new ArrayList[n];
         for (int i = 0; i < n; i++) adj[i] = new ArrayList<>();
 
+        // Conversion des ids de type long en int
         for (Map.Entry<Long, List<Arc>> entry : listeAdjacence.entrySet()) {
             int from = idToIndex.get(entry.getKey());
             for (Arc arc : entry.getValue()) {
@@ -166,6 +167,7 @@ public class Graph {
         double[] vitesse = new double[n];
         Arrays.fill(vitesse, 0);
 
+        // Dijkstra
         PriorityQueue<Integer> pq =
                 new PriorityQueue<>(Comparator.comparingDouble(i -> temps[i]));
 
@@ -186,9 +188,12 @@ public class Graph {
                 int v = idToIndex.get(arc.getPointArrivee().getId());
                 double dist = arc.getDistance();
 
-                double pente = (noeuds[u].getAltitude() - noeuds[v].getAltitude()) / dist;
+                // Calcul de la pente
 
+                double pente = (noeuds[u].getAltitude() - noeuds[v].getAltitude()) / dist;
+                // Calcul de la vitesse
                 double newVitesse = vitesse[u] + k * pente;
+                // Si vitesse négative ou nulle, l'eau s'arrête
                 if (newVitesse <= 0) continue;
 
                 double tempsArc = dist / newVitesse;
@@ -204,7 +209,7 @@ public class Graph {
         }
 
         Localisation[] copie = Arrays.copyOf(noeuds, n);
-
+        // Tri  par temps pour la Map
         Arrays.sort(copie, Comparator.comparingDouble(
                 loc -> temps[idToIndex.get(loc.getId())]
         ));
@@ -245,11 +250,13 @@ public class Graph {
 
         int[] parent = new int[n];
         Arrays.fill(parent, -1);
-
+        // Prise des ids des points de depart et d'arrivée
         int origine = idToIndex.get(idOrigin);
         int fin = idToIndex.get(idEvacuation);
 
         temps[origine] = 0.0;
+
+        // Dijkstra
 
         PriorityQueue<Integer> pq =
                 new PriorityQueue<>(Comparator.comparingDouble(i -> temps[i]));
@@ -268,7 +275,7 @@ public class Graph {
 
                 int v = idToIndex.get(arc.getPointArrivee().getId());
                 double dist = arc.getDistance();
-
+                // Calcul du temps
                 double tempsArc = dist / vVehicule;
                 double tArrivee = temps[u] + tempsArc;
 
