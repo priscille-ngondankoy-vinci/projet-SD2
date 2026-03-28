@@ -5,12 +5,10 @@ public class Graph {
 
   private Map<Long, List<Arc>> listeAdjacence;
   private Map<Long, Localisation> localisations;
-    private Localisation[] nodes;          // index -> Localisation
-    private Map<Long, Integer> idToIndex;  // id -> index
+    private Localisation[] noeuds;
+    private Map<Long, Integer> idToIndex;
     private List<Integer>[] adj;
     private double[][] dist;
-    private Map<Localisation, Double> cacheCrue = null;
-// dist[u][i] = distance de u à adj[u].get(i)
 
     //ATTRIBUT ?
   //TODO
@@ -24,17 +22,16 @@ public class Graph {
     l.chargerArcs(roads);
     construireStructureOptimisee();
   }
-    @SuppressWarnings("unchecked")
     private void construireStructureOptimisee() {
 
         int n = localisations.size();
 
-        nodes = new Localisation[n];
+        noeuds = new Localisation[n];
         idToIndex = new HashMap<>();
 
         int idx = 0;
         for (Localisation loc : localisations.values()) {
-            nodes[idx] = loc;
+            noeuds[idx] = loc;
             idToIndex.put(loc.getId(), idx);
             idx++;
         }
@@ -42,7 +39,6 @@ public class Graph {
         adj = new ArrayList[n];
         for (int i = 0; i < n; i++) adj[i] = new ArrayList<>();
 
-        // Remplir adj[] avec les indices
         for (Map.Entry<Long, List<Arc>> entry : listeAdjacence.entrySet()) {
             int from = idToIndex.get(entry.getKey());
             for (Arc arc : entry.getValue()) {
@@ -50,11 +46,9 @@ public class Graph {
                 adj[from].add(to);
             }
         }
-
-        // Construire dist[][] en parallèle
         dist = new double[n][];
         for (int u = 0; u < n; u++) {
-            List<Arc> arcs = listeAdjacence.get(nodes[u].getId());
+            List<Arc> arcs = listeAdjacence.get(noeuds[u].getId());
             dist[u] = new double[arcs.size()];
             for (int i = 0; i < arcs.size(); i++) {
                 dist[u][i] = arcs.get(i).getDistance();
@@ -164,7 +158,7 @@ public class Graph {
             double vWaterInit,
             double k) {
 
-        int n = nodes.length;
+        int n = noeuds.length;
 
         double[] temps = new double[n];
         Arrays.fill(temps, Double.POSITIVE_INFINITY);
@@ -185,21 +179,19 @@ public class Graph {
         while (!pq.isEmpty()) {
             int u = pq.poll();
 
-            List<Arc> arcs = listeAdjacence.get(nodes[u].getId());
+            List<Arc> arcs = listeAdjacence.get(noeuds[u].getId());
 
             for (Arc arc : arcs) {
 
                 int v = idToIndex.get(arc.getPointArrivee().getId());
                 double dist = arc.getDistance();
 
-
-                double pente = (nodes[u].getAltitude() - nodes[v].getAltitude()) / dist;
+                double pente = (noeuds[u].getAltitude() - noeuds[v].getAltitude()) / dist;
 
                 double newVitesse = vitesse[u] + k * pente;
                 if (newVitesse <= 0) continue;
-                double vitesseMoyenne = (vitesse[u] + newVitesse) / 2;
 
-                double tempsArc = dist / vitesseMoyenne;
+                double tempsArc = dist / newVitesse;
 
                 double nouveauTemps = temps[u] + tempsArc;
 
@@ -211,20 +203,19 @@ public class Graph {
             }
         }
 
-        List<Integer> indices = new ArrayList<>();
+        Localisation[] copie = Arrays.copyOf(noeuds, n);
 
-        for (int i = 0; i < n; i++) {
-            if (temps[i] < Double.POSITIVE_INFINITY) {
-                indices.add(i);
-            }
-        }
-
-        indices.sort(Comparator.comparingDouble(i -> temps[i]));
+        Arrays.sort(copie, Comparator.comparingDouble(
+                loc -> temps[idToIndex.get(loc.getId())]
+        ));
 
         Map<Localisation, Double> resultat = new LinkedHashMap<>();
 
-        for (int idx : indices) {
-            resultat.put(nodes[idx], temps[idx]);
+        for (Localisation loc : copie) {
+            double t = temps[idToIndex.get(loc.getId())];
+            if (t < Double.POSITIVE_INFINITY) {
+                resultat.put(loc, t);
+            }
         }
 
         return resultat;
@@ -240,11 +231,75 @@ public class Graph {
 
 
 
-    public Deque<Localisation> trouverCheminDEvacuationLePlusCourt(long idOrigin, long idEvacuation,
-      double vVehicule, Map<Localisation, Double> tFlood) {
-    //TODO
-    return null;
-  }
+
+    public Deque<Localisation> trouverCheminDEvacuationLePlusCourt(
+            long idOrigin,
+            long idEvacuation,
+            double vVehicule,
+            Map<Localisation, Double> tFlood) {
+
+        int n = noeuds.length;
+
+        double[] temps = new double[n];
+        Arrays.fill(temps, Double.POSITIVE_INFINITY);
+
+        int[] parent = new int[n];
+        Arrays.fill(parent, -1);
+
+        int origine = idToIndex.get(idOrigin);
+        int fin = idToIndex.get(idEvacuation);
+
+        temps[origine] = 0.0;
+
+        PriorityQueue<Integer> pq =
+                new PriorityQueue<>(Comparator.comparingDouble(i -> temps[i]));
+
+        pq.add(origine);
+
+        while (!pq.isEmpty()) {
+
+            int u = pq.poll();
+
+            if (u == fin) break;
+
+            List<Arc> arcs = listeAdjacence.get(noeuds[u].getId());
+
+            for (Arc arc : arcs) {
+
+                int v = idToIndex.get(arc.getPointArrivee().getId());
+                double dist = arc.getDistance();
+
+                double tempsArc = dist / vVehicule;
+                double tArrivee = temps[u] + tempsArc;
+
+                Localisation locV = noeuds[v];
+                Double tFloodV = tFlood.get(locV);
+
+                if (tFloodV != null && tArrivee > tFloodV) {
+                    continue;
+                }
+
+                if (tArrivee < temps[v]) {
+                    temps[v] = tArrivee;
+                    parent[v] = u;
+                    pq.add(v);
+                }
+            }
+        }
+
+        Deque<Localisation> chemin = new ArrayDeque<>();
+
+        if (temps[fin] == Double.POSITIVE_INFINITY) {
+            return chemin;
+        }
+
+        for (int cur = fin; cur != -1; cur = parent[cur]) {
+            chemin.addFirst(noeuds[cur]);
+        }
+
+        return chemin;
+    }
+
 
 
 }
